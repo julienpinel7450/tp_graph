@@ -4,12 +4,14 @@ jupytext:
   text_representation:
     extension: .md
     format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.17.2
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
   name: python3
+language_info:
+  name: python
+  pygments_lexer: ipython3
+  nbconvert_exporter: python
 ---
 
 # TP - algos de base sur les graphes
@@ -122,8 +124,7 @@ graph_as_list = [
 +++
 
 ````{admonition} pensez-vous que cette structure soit adaptée ?
-
-justifiez votre réponse
+ce n'est pas adapté je pense car pour un seul sommet on doit parcourir plusieurs listes pour avoir toutes les informations de ce sommet 
 ````
 
 +++
@@ -159,8 +160,7 @@ graph_as_matrix = (
 
 ````{admonition} pensez-vous que cette structure soit adaptée ?
 
-justifiez votre réponse
-````
+C'est déja mieux, mais on dois conserver le nom des sommets => c'est encore pas assez pratique je pense ````
 
 +++
 
@@ -169,8 +169,8 @@ justifiez votre réponse
 ```{code-cell} ipython3
 :cell_style: split
 
-# comment feriez-vous ?
-my_graph = ...
+# comment feriez-vous ? Je pourrai faire un dictionnaire 
+my_graph = {'a' : {'b':7, 'c':14, 'd':9}, 'b' : {'d':10,'e':15},'c' : {'d':2,'f':9}, 'd' : {'e':11}, 'e' : {'f' : 6}, 'f' : {} }
 ```
 
 +++ {"cell_style": "split"}
@@ -335,7 +335,32 @@ car votre code sera plus léger à lire
 # à vous d'écrire cette fonction
 
 def parse_graph(filename):
-    ...
+    with open(filename,'r') as f : 
+        lines = f.readlines() 
+        
+    G = {}
+    for line in lines :
+        line = line.rstrip().split(',')
+        if line[0] not in G : 
+            G[line[0]] = {line[1] : int(line[2])}
+        else : 
+            G[line[0]][line[1]] = int(line[2])
+        
+    for line in lines :
+        line = line.rstrip().split(',')      # Je pense qu'il y a mieux a faire, en une boucle par exemple mais je ne vois pas comment faire 
+
+        if line[1] not in G :
+            G[line[1]] = {}
+            
+    
+
+    return G
+            
+            
+G = parse_graph('data/graph.csv')
+
+print(G)
+    
 ```
 
 pour vérifier, inspectez visuellement votre résultat  
@@ -390,7 +415,9 @@ def number_vertices(graph):
     Returns:
       int: number of vertices
     """
-    ...
+    return len(graph)
+print(number_vertices(G))
+    
 ```
 
 ### pour vérifier
@@ -418,6 +445,10 @@ commençons par voir un exemple
 # parce que sinon c'est pas drôle
 
 reach = parse_graph("data/reach.csv")
+```
+
+```{code-cell} ipython3
+conda install graphviz
 ```
 
 ```{code-cell} ipython3
@@ -459,7 +490,7 @@ for vertex, expected_reachables in reach_reachables.items():
 
 ### la difficulté
 
-+++
++++ {"jp-MarkdownHeadingCollapsed": true}
 
 #### l'anti-loop
 
@@ -534,7 +565,23 @@ def reachables(graph, s):
     Returns:
       a set of vertices in graph
     """
-    ...
+    a = [s]
+    def step_reachables(graph,s,a):
+        unseen_v = []
+        new_v = graph.get(s,{}).keys()
+        for v in new_v : 
+            if v not in a : 
+                a.append(v)
+                unseen_v.append(v)
+        for v in unseen_v : 
+            step_reachables(graph,v,a)
+
+    step_reachables(graph,s,a)
+
+         
+            
+    return set(a)
+    
 ```
 
 ### pour vérifier
@@ -634,6 +681,7 @@ en français :
 #### question
 
 * quels moyens (structures de données) voyez-vous pour matérialiser avec des objets Python la notion de marque ?
+* On fait deux listes : une nommée visité et une autre nommée non visité
 
 +++ {"cell_style": "center"}
 
@@ -774,8 +822,26 @@ def shortest_distance(graph, v1, v2):
     Returns:
       int: the length of the shortest path, or None 
     """
-    ...
-    
+    distance = {noeud : float('inf') for noeud in graph}
+    distance [v1] = 0
+    a_visiter = list(graph.keys())
+
+    while a_visiter :
+        proche = a_visiter[0]
+        for noeud in a_visiter : 
+            if distance[noeud] < distance[proche]:
+                proche = noeud
+                
+        a_visiter.remove(proche)
+
+        for voisin, poids in graph[proche].items():
+            chemin_tot = distance[proche] + poids
+            if chemin_tot < distance[voisin]:
+                distance[voisin] = chemin_tot
+
+    return distance[v2]
+
+
 ```
 
 ### vérifications
@@ -843,7 +909,7 @@ c'est l'occasion de parler un peu de l'instruction `assert`:
 :tags: [raises-exception]
 
 GD2 = parse_graph("data/dense-2.csv")
-assert shortest_distance(GD2, "1x1", "2x2") == 4
+assert shortest_distance(GD2, '1x1', '2x2') == 4
 ```
 
 ```{code-cell} ipython3
